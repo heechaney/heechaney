@@ -151,6 +151,12 @@
     .proj-layout{ flex-direction:column; gap:22px; }
     .proj-info{ position:static; width:auto; max-width:560px; }
   }
+  /* 모바일: Experience의 연도/항목 2단 레이아웃 해제 → 연도 위, 내용 아래로 쌓기 */
+  @media (max-width:560px){
+    #view-info p.exp{ display:block; }
+    #view-info p.exp .exp-yr{ display:block; flex:none; margin-bottom:1px; }
+    #view-info p.exp .exp-t{ display:block; }
+  }
 
   /* ───────── Home 갤러리 ─────────
      세부 페이지(프로젝트)의 대표 이미지를 한눈에 보여주는 첫 화면.
