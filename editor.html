@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>포트폴리오 편집기 — Heechan Lee</title>
+<style>
+  :root{ --ink:#1a1a1a; --soft:#777; --line:#e2e2e2; --accent:#c0392b; --bg:#f6f5f2; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+        line-height:1.6; }
+  .wrap{ max-width:860px; margin:0 auto; padding:34px 22px 120px; }
+  h1{ font-size:1.4rem; margin:0 0 6px; }
+  .lead{ color:var(--soft); margin:0 0 26px; font-size:.94rem; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-bottom:18px; }
+  .card h2{ font-size:1.05rem; margin:0 0 4px; }
+  .card .hint{ color:var(--soft); font-size:.85rem; margin:0 0 16px; }
+  label{ display:block; font-size:.82rem; color:var(--soft); margin:10px 0 4px; }
+  input[type=text], input[type=email], input[type=url], textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px;
+    font:inherit; font-size:.9rem; background:#fff; }
+  textarea{ resize:vertical; min-height:64px; }
+  button{ font:inherit; cursor:pointer; border-radius:8px; border:1px solid var(--line);
+           background:#fff; padding:8px 14px; font-size:.85rem; transition:background .15s,border-color .15s; }
+  button:hover{ background:#f0eee9; }
+  button.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  button.primary:hover{ background:#000; }
+  button.mini{ padding:4px 9px; font-size:.78rem; }
+  button.danger{ color:var(--accent); border-color:#e8c4be; }
+  button.danger:hover{ background:#fbeeec; }
+  .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .year-block{ border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:14px; background:#fcfbf9; }
+  .year-head{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+  .year-head input{ width:120px; font-weight:600; }
+  .proj-block{ border:1px solid var(--line); border-radius:9px; padding:12px; margin:10px 0; background:#fff; }
+  .proj-head{ display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+  .proj-head input{ flex:1; font-weight:600; }
+  .imgs{ display:flex; flex-wrap:wrap; gap:10px; }
+  .img-slot{ position:relative; width:118px; border:1px solid var(--line); border-radius:8px; padding:8px; background:#faf9f7; }
+  .slot-no{ position:absolute; top:4px; left:4px; z-index:2; min-width:18px; height:18px; padding:0 4px;
+            border-radius:9px; background:rgba(0,0,0,.62); color:#fff; font-size:.7rem; line-height:18px;
+            text-align:center; font-weight:600; }
+  .move-row{ justify-content:center; gap:6px; margin-top:6px; }
+  .move-row button{ flex:1; padding:4px 0; font-size:.82rem; }
+  button:disabled{ opacity:.32; cursor:default; }
+  button:disabled:hover{ background:#fff; }
+  .cover-btn{ width:100%; margin-top:6px; padding:4px 0; font-size:.78rem; }
+  .cover-btn.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .cover-btn.on:hover{ background:#000; }
+  .img-slot.is-cover{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
+  .thumb{ width:100%; height:80px; border-radius:5px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .img-slot .row{ margin-top:6px; justify-content:space-between; }
+  .img-slot input[type=text]{ font-size:.75rem; padding:5px 7px; margin-top:6px; }
+  .filebtn{ position:relative; overflow:hidden; display:inline-block; }
+  .filebtn input[type=file]{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .savebar{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line);
+            padding:14px 22px; display:flex; gap:10px; align-items:center; justify-content:center; }
+  .savebar .note{ color:var(--soft); font-size:.8rem; margin-right:auto; }
+  .step{ display:none; }
+  .step.on{ display:block; }
+  .filedrop{ border:1.5px dashed #cfcdc7; border-radius:10px; padding:30px; text-align:center; color:var(--soft); }
+  .ok{ color:#1a7f4b; }
+  code{ background:#f0eee9; padding:1px 5px; border-radius:4px; font-size:.85em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>포트폴리오 편집기</h1>
+  <p class="lead">코드를 직접 만지지 않고 작업물·소개를 추가할 수 있어요. ① <code>web</code> 폴더 열기 → ② 편집 → ③ 저장(폴더에 바로 기록).</p>
+
+  <!-- STEP 1 -->
+  <div class="card step on" id="step1">
+    <h2>① 사이트 폴더 열기</h2>
+    <p class="hint"><code>index.html</code>이 들어 있는 <code>web</code> 폴더를 선택하세요. 이미지는 폴더 안 <code>images/</code>에 자동 저장됩니다. (Chrome 또는 Edge에서 열어주세요.)</p>
+    <div class="filedrop">
+      <button class="primary" id="openFolder">web 폴더 열기</button>
+      <p id="loadMsg" style="margin:14px 0 0;"></p>
+    </div>
+  </div>
+
+  <!-- STEP 2: PROJECTS -->
+  <div class="card step" id="stepProjects">
+    <h2>② 작업 (연도별 프로젝트)</h2>
+    <p class="hint">연도 안에 프로젝트를 만들고, 프로젝트 안에 이미지를 넣으세요. 이미지를 고르면 파일 안에 바로 포함됩니다(별도 폴더 불필요).</p>
+    <div id="projectsArea"></div>
+    <button class="mini" data-act="add-year">+ 연도 추가</button>
+  </div>
+
+  <!-- STEP 2: INFO -->
+  <div class="card step" id="stepInfo">
+    <h2>② Information (소개·이력·연락처)</h2>
+    <div id="infoArea"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card step" id="step3">
+    <h2>③ 저장</h2>
+    <p class="hint">저장을 누르면 폴더 안의 <code>index.html</code>이 바로 갱신되고, 새로 올린 이미지는 <code>images/</code>에 기록됩니다. 그다음 브라우저에서 <code>index.html</code>을 새로고침하면 끝이에요.</p>
+    <div class="row">
+      <button class="primary" id="saveBtn">폴더에 저장</button>
+      <span id="saveMsg" class="ok"></span>
+    </div>
+  </div>
+</div>
+
+<div class="savebar step" id="savebar">
+  <span class="note">편집 내용은 "저장"을 눌러야 폴더에 기록됩니다.</span>
+  <button class="primary" id="saveBtn2">폴더에 저장</button>
+</div>
+
+<script>
+const PALETTE = ["#e8927c","#7c9ee8","#7ce8b0","#e8d27c","#c87ce8","#7ce0e8","#f0a8c0","#a8c0f0","#c0e8a8"];
+let htmlText = "";        // 불러온 index.html 원문
+let projects = [];
+let info = {};
+let dirHandle = null;             // 선택한 web 폴더 핸들
+const imgURLCache = {};           // 경로 → 화면 표시용 objectURL
+const pendingImages = {};         // 저장 대기 이미지: 경로 → Blob (새로 올린 것)
+const RE_BLOCK = /\/\*__CONTENT_START__[\s\S]*?__CONTENT_END__\*\//;
+const $ = sel => document.querySelector(sel);
+
+/* 이미지 경로 → 화면 표시용 URL (없으면 경로 그대로) */
+function urlFor(src){
+  if(!src) return '';
+  if(/^data:/.test(src)) return src;
+  return imgURLCache[src] || src;
+}
+
+/* 폴더 핸들에서 한 이미지 파일을 읽어 objectURL 캐시에 올림 */
+async function cacheImage(path){
+  if(!path || /^data:/.test(path) || imgURLCache[path] || !dirHandle) return;
+  try{
+    const parts = path.split('/');                 // 예: images/img_001.jpg
+    let h = dirHandle;
+    for(let i=0;i<parts.length-1;i++) h = await h.getDirectoryHandle(parts[i]);
+    const fh = await h.getFileHandle(parts[parts.length-1]);
+    const file = await fh.getFile();
+    imgURLCache[path] = URL.createObjectURL(file);
+  }catch(err){ /* 파일 없음 등은 조용히 무시 → 경로 폴백 */ }
+}
+
+/* 현재 데이터가 참조하는 모든 이미지 경로를 미리 캐시 */
+async function preloadImages(){
+  const paths = new Set();
+  (projects||[]).forEach(g=>(g.items||[]).forEach(p=>{
+    (p.works||[]).forEach(w=>{ if(w.src) paths.add(w.src); });
+    (Array.isArray(p.thumbs)?p.thumbs:[]).forEach(s=>{ if(s) paths.add(s); });
+  }));
+  await Promise.all([...paths].map(cacheImage));
+}
+
+/* ---------- ① 폴더 열기 ---------- */
+$('#openFolder').addEventListener('click', async ()=>{
+  if(!window.showDirectoryPicker){
+    $('#loadMsg').innerHTML = '<span style="color:#c0392b">이 브라우저는 폴더 저장을 지원하지 않아요. Chrome 또는 Edge에서 열어주세요.</span>';
+    return;
+  }
+  try{
+    dirHandle = await window.showDirectoryPicker({ mode:'readwrite' });
+  }catch(err){ return; }   // 사용자가 취소
+  try{
+    const fh = await dirHandle.getFileHandle('index.html');
+    const file = await fh.getFile();
+    htmlText = await file.text();
+  }catch(err){
+    $('#loadMsg').innerHTML = '<span style="color:#c0392b">이 폴더에서 index.html을 찾지 못했어요. web 폴더가 맞는지 확인해 주세요.</span>'; return;
+  }
+  const m = htmlText.match(RE_BLOCK);
+  if(!m){ $('#loadMsg').innerHTML = '<span style="color:#c0392b">index.html에서 편집 영역(__CONTENT_START__)을 찾지 못했어요.</span>'; return; }
+  try{
+    const data = new Function(m[0] + '\n; return { PROJECTS, INFO };')();
+    projects = data.PROJECTS || [];
+    info = Object.assign({ instagram:"", instagramLabel:"", about:[], skills:[], experience:[], cv:[], email:"" }, data.INFO || {});
+  }catch(err){
+    $('#loadMsg').innerHTML = '<span style="color:#c0392b">내용을 읽는 중 오류가 났어요: '+err.message+'</span>'; return;
+  }
+  normalizeHome();
+  await preloadImages();
+  $('#loadMsg').innerHTML = '<span class="ok">불러왔어요! 아래에서 편집하세요.</span>';
+  document.querySelectorAll('.step').forEach(s=>s.classList.add('on'));
+  renderProjects(); renderInfo();
+  window.scrollTo({top:$('#stepProjects').offsetTop-20, behavior:'smooth'});
+});
+
+/* Home 대표 썸네일 = 선택한 이미지(p.home: 인덱스 배열) + 업로드한 추가 썸네일(p.thumbs: 데이터URI 배열), 합쳐 최대 5개 */
+const HOME_MAX = 5;
+function homeWorks(p){ return Array.isArray(p.home)?p.home:[]; }
+function homeThumbs(p){ return Array.isArray(p.thumbs)?p.thumbs:[]; }
+function homeCount(p){ return homeWorks(p).length + homeThumbs(p).length; }
+function isHomeWork(p,wi){ return homeWorks(p).includes(wi); }
+
+/* 불러온 데이터의 옛 형식(thumb/cover 단일)을 새 형식(home/thumbs 다중)으로 변환 */
+function normalizeHome(){
+  (projects||[]).forEach(g=>(g.items||[]).forEach(p=>{
+    if(!Array.isArray(p.thumbs)) p.thumbs = p.thumb ? [p.thumb] : [];
+    delete p.thumb;
+    if(!Array.isArray(p.home)) p.home = Number.isInteger(p.cover) ? [p.cover] : [];
+    delete p.cover;
+    const works = p.works || [];
+    p.home = [...new Set(p.home)].filter(i=>Number.isInteger(i) && works[i] && works[i].src);
+    if(p.home.length > HOME_MAX) p.home = p.home.slice(0, HOME_MAX);
+    const room = Math.max(0, HOME_MAX - p.home.length);
+    if(p.thumbs.length > room) p.thumbs = p.thumbs.slice(0, room);
+  }));
+}
+
+/* ---------- ② 프로젝트 렌더 ---------- */
+function renderProjects(){
+  const area = $('#projectsArea');
+  area.innerHTML = projects.map((g,y)=>`
+    <div class="year-block">
+      <div class="year-head">
+        <input type="text" value="${escAttr(g.year)}" data-field="year" data-y="${y}" placeholder="연도">
+        <button class="mini" data-act="year-up" data-y="${y}">↑</button>
+        <button class="mini" data-act="year-down" data-y="${y}">↓</button>
+        <button class="mini danger" data-act="year-del" data-y="${y}">연도 삭제</button>
+      </div>
+      ${(g.items||[]).map((p,pi)=>`
+        <div class="proj-block">
+          <div class="proj-head">
+            <input type="text" value="${escAttr(p.title)}" data-field="ptitle" data-y="${y}" data-p="${pi}" placeholder="프로젝트 이름">
+            <button class="mini" data-act="proj-up" data-y="${y}" data-p="${pi}">↑</button>
+            <button class="mini" data-act="proj-down" data-y="${y}" data-p="${pi}">↓</button>
+            <button class="mini danger" data-act="proj-del" data-y="${y}" data-p="${pi}">삭제</button>
+          </div>
+          <label style="margin-top:0;">세부 페이지 설명 (이 프로젝트를 열면 위에 표시돼요)</label>
+          <textarea data-field="pdesc" data-y="${y}" data-p="${pi}" placeholder="예: 2026년 작업한 데쿠파주 시리즈. 종이를 오려 붙여…">${escHtml(p.desc||'')}</textarea>
+          <label>영상 링크 (선택 — Vimeo/YouTube. 비우면 영상 없음)</label>
+          <input type="text" value="${escAttr(p.video||'')}" data-field="pvideo" data-y="${y}" data-p="${pi}" placeholder="예: https://vimeo.com/1194766313">
+          <div class="hint" style="font-size:11px;color:#999;margin:3px 0 0;">공유 링크를 그대로 붙여도 자동으로 임베드 주소로 변환돼요.</div>
+          <label>Home 대표 썸네일 — 최대 ${HOME_MAX}개 <span style="color:${homeCount(p)>=HOME_MAX?'#c0392b':'#999'};font-weight:600;">(현재 ${homeCount(p)}/${HOME_MAX})</span></label>
+          <div class="hint" style="font-size:11px;color:#999;margin:3px 0 0;">아래 이미지에서 <b>Home 표시</b>를 눌러 고르거나, 영상 전용 프로젝트라면 '+ 추가 썸네일'을 올리세요. 합쳐서 최대 ${HOME_MAX}개가 Home에 보여요. 아무것도 안 고르면 첫 이미지가 자동으로 쓰입니다.</div>
+          <div class="row" style="margin-top:8px;align-items:center;gap:10px;flex-wrap:wrap;">
+            ${homeThumbs(p).map((src,ti)=>`<div style="position:relative;width:118px;height:80px;background:#eee;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:0 0 auto;">
+                <img src="${escAttr(urlFor(src))}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+                <button class="mini danger" data-act="thumb-del" data-y="${y}" data-p="${pi}" data-ti="${ti}" style="position:absolute;top:3px;right:3px;padding:0 6px;line-height:1.5;" title="이 썸네일 삭제">×</button>
+              </div>`).join('')}
+            <button class="mini filebtn" ${homeCount(p)>=HOME_MAX?'disabled':''}>+ 추가 썸네일(영상용)<input type="file" accept="image/*" data-act="thumb-file" data-y="${y}" data-p="${pi}" ${homeCount(p)>=HOME_MAX?'disabled':''}></button>
+          </div>
+          <div class="imgs" style="margin-top:10px;">
+            ${(p.works||[]).map((w,wi)=>`
+              <div class="img-slot ${(w.src && isHomeWork(p,wi))?'is-cover':''}">
+                <div class="slot-no">${wi+1}</div>
+                <div class="thumb" style="background:${w.src?'#eee':(w.c||'#ccc')}">
+                  ${w.src?`<img src="${escAttr(urlFor(w.src))}" alt="">`:''}
+                </div>
+                <div class="row move-row">
+                  <button class="mini" data-act="img-left" data-y="${y}" data-p="${pi}" data-w="${wi}" ${wi===0?'disabled':''} title="앞으로">←</button>
+                  <button class="mini" data-act="img-right" data-y="${y}" data-p="${pi}" data-w="${wi}" ${wi===(p.works.length-1)?'disabled':''} title="뒤로">→</button>
+                </div>
+                <button class="mini cover-btn ${(w.src && isHomeWork(p,wi))?'on':''}" data-act="img-home" data-y="${y}" data-p="${pi}" data-w="${wi}" ${(w.src && (isHomeWork(p,wi) || homeCount(p)<HOME_MAX))?'':'disabled'} title="Home 갤러리에 표시">${(w.src && isHomeWork(p,wi))?'✓ Home':'Home 표시'}</button>
+                <input type="text" value="${escAttr(w.title||'')}" data-field="wtitle" data-y="${y}" data-p="${pi}" data-w="${wi}" placeholder="설명(선택)">
+                <div class="row">
+                  <button class="mini filebtn">이미지<input type="file" accept="image/*" data-act="img-file" data-y="${y}" data-p="${pi}" data-w="${wi}"></button>
+                  <button class="mini danger" data-act="img-del" data-y="${y}" data-p="${pi}" data-w="${wi}">×</button>
+                </div>
+              </div>`).join('')}
+            <div class="img-slot" style="display:flex;align-items:center;justify-content:center;">
+              <button class="mini" data-act="img-add" data-y="${y}" data-p="${pi}">+ 이미지</button>
+            </div>
+          </div>
+        </div>`).join('')}
+      <button class="mini" data-act="proj-add" data-y="${y}">+ 프로젝트 추가</button>
+    </div>`).join('');
+}
+
+/* ---------- ② Information 렌더 ---------- */
+function renderInfo(){
+  $('#infoArea').innerHTML = `
+    <label>About (한 줄에 한 문단)</label>
+    <textarea data-info="about">${escHtml((info.about||[]).join('\n'))}</textarea>
+
+    <label>Services (쉼표로 구분)</label>
+    <input type="text" data-info="skills" value="${escAttr((info.skills||[]).join(', '))}">
+
+    <label>Experience (한 줄에 한 항목 — Services 아래에 표시돼요)</label>
+    <textarea data-info="experience" placeholder="예: 2021– Freelance Illustration /Graphic Design for Various Clients, Seoul">${escHtml((info.experience||[]).join('\n'))}</textarea>
+    <div class="hint" style="font-size:11px;color:#999;margin:3px 0 0;">맨 앞 연도와 그 뒤 내용이 자동으로 두 칸으로 나뉘어 정렬돼요. (예: <code>2023–2025 Graphic Designer, Studio front-door</code>)</div>
+
+    <label>이력 (CV)</label>
+    <div id="cvArea">${(info.cv||[]).map((g,gi)=>`
+      <div class="proj-block">
+        <div class="row" style="margin-bottom:6px;">
+          <input type="text" value="${escAttr(g.group||'')}" data-cv="name" data-g="${gi}" placeholder="항목 제목 (예: Education)" style="flex:1;font-weight:600;">
+          <button class="mini danger" data-act="group-del" data-g="${gi}">삭제</button>
+        </div>
+        <textarea data-cv="lines" data-g="${gi}" placeholder="한 줄에 한 항목">${escHtml((g.items||[]).map(it=>it.t||'').join('\n'))}</textarea>
+      </div>`).join('')}</div>
+    <button class="mini" data-act="group-add">+ 이력 항목 추가</button>
+
+    <label>Email</label>
+    <input type="email" data-info="email" value="${escAttr(info.email||'')}">
+
+    <label>Instagram 주소(URL)</label>
+    <input type="url" data-info="instagram" value="${escAttr(info.instagram||'')}">
+
+    <label>Instagram 표시 텍스트 (예: @heechaney)</label>
+    <input type="text" data-info="instagramLabel" value="${escAttr(info.instagramLabel||'')}">
+  `;
+}
+
+/* ---------- 입력 반영 (구조 변경 없이 값만) ---------- */
+document.addEventListener('input', e=>{
+  const t = e.target;
+  if(t.dataset.field){
+    const y=+t.dataset.y, p=t.dataset.p, w=t.dataset.w;
+    if(t.dataset.field==='year') projects[y].year=t.value;
+    else if(t.dataset.field==='ptitle') projects[y].items[+p].title=t.value;
+    else if(t.dataset.field==='pdesc') projects[y].items[+p].desc=t.value;
+    else if(t.dataset.field==='pvideo') projects[y].items[+p].video=t.value;
+    else if(t.dataset.field==='wtitle') projects[y].items[+p].works[+w].title=t.value;
+  } else if(t.dataset.info){
+    const k=t.dataset.info;
+    if(k==='about') info.about=t.value.split('\n');
+    else if(k==='skills') info.skills=t.value.split(',').map(s=>s.trim());
+    else if(k==='experience') info.experience=t.value.split('\n');
+    else info[k]=t.value;
+  } else if(t.dataset.cv){
+    const g=+t.dataset.g;
+    if(t.dataset.cv==='name') info.cv[g].group=t.value;
+    else info.cv[g].items=t.value.split('\n').map(line=>({yr:"",t:line,s:""}));
+  }
+});
+
+/* ---------- 버튼 동작 (구조 변경 → 재렌더) ---------- */
+document.addEventListener('click', e=>{
+  const b=e.target.closest('button[data-act]'); if(!b) return;
+  const a=b.dataset.act, y=+b.dataset.y, p=+b.dataset.p, w=+b.dataset.w;
+  const move=(arr,i,d)=>{ const j=i+d; if(j<0||j>=arr.length)return; [arr[i],arr[j]]=[arr[j],arr[i]]; };
+  // 이미지 순서 이동 — Home 선택(home) 인덱스가 같은 이미지를 따라가도록 함께 갱신
+  const moveImg=(proj,i,d)=>{
+    const arr=proj.works, j=i+d; if(j<0||j>=arr.length) return;
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+    if(Array.isArray(proj.home)) proj.home = proj.home.map(x=> x===i ? j : (x===j ? i : x));
+  };
+  if(a==='add-year') projects.push({year:"새 연도", items:[]});
+  else if(a==='year-del'){ if(confirm('이 연도와 안의 프로젝트를 모두 삭제할까요?')) projects.splice(y,1); }
+  else if(a==='year-up') move(projects,y,-1);
+  else if(a==='year-down') move(projects,y,1);
+  else if(a==='proj-add') projects[y].items.push({title:"새 프로젝트", works:[]});
+  else if(a==='proj-del'){ if(confirm('이 프로젝트를 삭제할까요?')) projects[y].items.splice(p,1); }
+  else if(a==='proj-up') move(projects[y].items,p,-1);
+  else if(a==='proj-down') move(projects[y].items,p,1);
+  else if(a==='img-add') projects[y].items[p].works.push({src:"",title:"",year:projects[y].year,c:PALETTE[Math.floor(Math.random()*PALETTE.length)]});
+  else if(a==='img-left') moveImg(projects[y].items[p],w,-1);
+  else if(a==='img-right') moveImg(projects[y].items[p],w,1);
+  else if(a==='img-home'){
+    const proj=projects[y].items[p];
+    if(!Array.isArray(proj.home)) proj.home=[];
+    const idx=proj.home.indexOf(w);
+    if(idx>=0) proj.home.splice(idx,1);                                  // 이미 선택 → 해제
+    else { if(homeCount(proj)>=HOME_MAX){ alert('Home에는 최대 '+HOME_MAX+'개까지 표시할 수 있어요.'); return; } proj.home.push(w); }
+  }
+  else if(a==='thumb-del'){
+    const proj=projects[y].items[p], ti=+b.dataset.ti;
+    if(Array.isArray(proj.thumbs)) proj.thumbs.splice(ti,1);
+  }
+  else if(a==='img-del'){
+    const proj=projects[y].items[p];
+    proj.works.splice(w,1);
+    if(Array.isArray(proj.home)) proj.home = proj.home.filter(x=>x!==w).map(x=> x>w ? x-1 : x);
+  }
+  else if(a==='group-add'){ info.cv.push({group:"새 항목", items:[]}); renderInfo(); return; }
+  else if(a==='group-del'){ if(confirm('이 이력 항목을 삭제할까요?')){ info.cv.splice(+b.dataset.g,1); renderInfo(); } return; }
+  else return;
+  renderProjects();
+});
+
+/* ---------- 이미지 파일 → images/ 폴더에 저장될 새 파일로 등록 ---------- */
+let imgSeq = 0;
+function extFor(file){
+  const m = (file.name||'').match(/\.([A-Za-z0-9]+)$/);
+  if(m) return m[1].toLowerCase();
+  return ({'image/jpeg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp','image/svg+xml':'svg'})[file.type] || 'jpg';
+}
+/* 파일을 받아 고유 경로를 만들고, 저장 대기 + 화면 표시 URL 등록 → 경로 반환 */
+function registerImage(file){
+  imgSeq++;
+  const path = 'images/up_' + Date.now() + '_' + imgSeq + '.' + extFor(file);
+  pendingImages[path] = file;                       // 저장 시 폴더에 기록
+  imgURLCache[path] = URL.createObjectURL(file);    // 편집 화면 미리보기
+  return path;
+}
+document.addEventListener('change', e=>{
+  const t=e.target;
+  const y=+t.dataset.y, p=+t.dataset.p, w=+t.dataset.w;
+  if(t.dataset.act==='img-file'){
+    const file=t.files[0]; if(!file) return;
+    projects[y].items[p].works[w].src = registerImage(file);
+    renderProjects();
+  } else if(t.dataset.act==='thumb-file'){
+    const file=t.files[0]; if(!file) return;
+    const proj=projects[y].items[p];
+    if(homeCount(proj)>=HOME_MAX){ alert('Home에는 최대 '+HOME_MAX+'개까지 표시할 수 있어요.'); t.value=''; return; }
+    if(!Array.isArray(proj.thumbs)) proj.thumbs=[];
+    proj.thumbs.push(registerImage(file));
+    renderProjects();
+  }
+});
+
+/* ---------- 생성 & 저장 ---------- */
+function buildInfo(){
+  return {
+    instagram: info.instagram||"",
+    instagramLabel: info.instagramLabel||"",
+    about: (info.about||[]).map(s=>s.trim()).filter(Boolean),
+    skills: (info.skills||[]).map(s=>s.trim()).filter(Boolean),
+    experience: (info.experience||[]).map(s=>s.trim()).filter(Boolean),
+    cv: (info.cv||[]).map(g=>({ group:(g.group||"").trim(),
+        items:(g.items||[]).filter(it=>(it.t||"").trim()).map(it=>({yr:it.yr||"",t:it.t.trim(),s:it.s||""})) }))
+        .filter(g=>g.group||g.items.length),
+    email: info.email||""
+  };
+}
+// 공유 링크를 임베드 주소로 변환 (Vimeo / YouTube). 이미 임베드면 그대로 둠.
+function normalizeVideo(url){
+  url=(url||"").trim();
+  if(!url) return "";
+  let m;
+  if(/player\.vimeo\.com\/video\//.test(url)) return url.split('?')[0];
+  m=url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if(m) return 'https://player.vimeo.com/video/'+m[1];
+  if(/youtube\.com\/embed\//.test(url)) return url.split('?')[0];
+  m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if(m) return 'https://www.youtube.com/embed/'+m[1];
+  return url; // 알 수 없는 형식은 그대로
+}
+function buildProjects(){
+  return (projects||[]).map(g=>({
+    year:(g.year||"").trim(),
+    items:(g.items||[]).map(p=>{
+      const item={
+        title:(p.title||"").trim(),
+        desc:(p.desc||"").trim(),
+        works:(p.works||[]).map(w=>({ src:w.src||"", title:(w.title||"").trim(), year:(g.year||"").trim(), c:w.c||"#cccccc" }))
+      };
+      // Home 대표 썸네일: 선택 이미지(home) + 업로드 썸네일(thumbs), 합쳐 최대 5개
+      const home=[...new Set(Array.isArray(p.home)?p.home:[])].filter(i=>Number.isInteger(i)&&item.works[i]&&item.works[i].src).slice(0,5);
+      const room=Math.max(0,5-home.length);
+      const thumbs=(Array.isArray(p.thumbs)?p.thumbs:[]).filter(Boolean).slice(0,room);
+      if(home.length) item.home=home;
+      if(thumbs.length) item.thumbs=thumbs;
+      const v=normalizeVideo(p.video);
+      if(v) item.video=v;
+      return item;
+    })
+  }));
+}
+function generateBlock(){
+  return '/*__CONTENT_START__  ← editor.html이 이 줄부터 __CONTENT_END__ 까지 자동으로 교체합니다. (직접 수정도 가능) */\n'
+       + 'const PROJECTS = ' + JSON.stringify(buildProjects(), null, 2) + ';\n'
+       + 'const INFO = ' + JSON.stringify(buildInfo(), null, 2) + ';\n'
+       + '/*__CONTENT_END__*/';
+}
+function buildHtml(){
+  if(!htmlText) { alert('먼저 web 폴더를 열어주세요.'); return null; }
+  return htmlText.replace(RE_BLOCK, ()=>generateBlock());
+}
+/* 폴더 핸들 아래에 파일 쓰기 (중간 디렉터리는 자동 생성) */
+async function writeFile(path, data){
+  const parts = path.split('/');
+  let h = dirHandle;
+  for(let i=0;i<parts.length-1;i++) h = await h.getDirectoryHandle(parts[i], {create:true});
+  const fh = await h.getFileHandle(parts[parts.length-1], {create:true});
+  const w = await fh.createWritable();
+  await w.write(data); await w.close();
+}
+async function doSave(){
+  if(!dirHandle){ alert('먼저 web 폴더를 열어주세요.'); return; }
+  const out = buildHtml(); if(out===null) return;
+  $('#saveMsg').textContent = '저장 중…';
+  try{
+    // 1) 새로 올린 이미지들을 images/ 에 기록
+    const paths = Object.keys(pendingImages);
+    for(const path of paths){
+      await writeFile(path, pendingImages[path]);
+      delete pendingImages[path];        // 기록 완료
+    }
+    // 2) index.html 갱신
+    await writeFile('index.html', out);
+    htmlText = out;                       // 다음 저장의 기준 갱신
+    $('#saveMsg').textContent = '저장했어요! 브라우저에서 index.html을 새로고침하세요.';
+  }catch(err){
+    $('#saveMsg').textContent = '';
+    alert('저장 중 오류가 났어요: ' + err.message);
+  }
+}
+$('#saveBtn').addEventListener('click', doSave);
+$('#saveBtn2').addEventListener('click', doSave);
+
+/* ---------- 유틸 ---------- */
+function escAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
