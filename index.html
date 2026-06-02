@@ -251,6 +251,11 @@
   body.detail .hero-spacer{ height:0; }
   body.detail .sidebar{ opacity:1 !important; pointer-events:auto !important; }
 
+  /* 인트로를 한 번 지난 뒤(첫 진입 이후): 히어로 비활성화 → 홈은 곧장 갤러리 */
+  body.intro-done #hero{ display:none; }
+  body.intro-done .hero-spacer{ height:0; }
+  body.intro-done .sidebar{ opacity:1 !important; pointer-events:auto !important; }
+
 </style>
 </head>
 
@@ -1000,6 +1005,25 @@ const flat = [];
 let nav = "";
 // flat 배열만 채우고(홈/라이트박스/세부페이지에서 사용), 사이드바에는 항목을 표시하지 않음
 PROJECTS.forEach(group=>{ group.items.forEach(p=>{ if(p.year==null) p.year=group.year; flat.push(p); }); });
+
+// 프로젝트 제목 → URL 슬러그 (예: "Drawing In Transit" → "drawing-in-transit")
+function slugify(t){
+  return String(t||'')
+    .trim().toLowerCase()
+    .replace(/['"’]/g,'')          // 따옴표 제거
+    .replace(/[^a-z0-9]+/g,'-')    // 그 외 문자는 하이픈으로
+    .replace(/^-+|-+$/g,'');       // 양끝 하이픈 정리
+}
+const slugOf = [];      // pi → slug
+const slugToPi = {};    // slug → pi
+flat.forEach((p,pi)=>{
+  let base = slugify(p.title) || ('p'+pi);   // 영문이 없으면 p{번호}로 대체
+  let s = base, n = 2;
+  while(slugToPi[s]!==undefined){ s = base+'-'+n; n++; }   // 중복 제목 구분
+  slugOf[pi] = s;
+  slugToPi[s] = pi;
+});
+
 nav += `<button class="info-btn" data-info="1">Information</button>`;
 document.getElementById('index').innerHTML = nav;
 
@@ -1168,15 +1192,47 @@ function applyHomeLayout(){
   });
 }
 
-// 홈 썸네일 클릭 → 해당 프로젝트 세부 페이지 열기 (+ 사이드바 활성화)
-homeEl.addEventListener('click', e=>{
-  const card = e.target.closest('.home-card'); if(!card) return;
-  const pi = +card.dataset.pi;
+// ───────── 화면 전환 + 브라우저 히스토리 ─────────
+function hashFor(state){
+  if(!state || state.view==='home') return '#';
+  if(state.view==='info') return '#about';
+  return '#' + (slugOf[state.pi] || ('p'+state.pi));
+}
+function applyState(state){
+  // 홈이 아닌 화면을 한 번이라도 열면 인트로는 끝난 것으로 간주
+  if(state.view==='project' || state.view==='info'){
+    window.__afterIntro = true;
+    document.body.classList.add('intro-done');
+  }
   buttons.forEach(x=>x.classList.remove('active'));
   brandEl.classList.remove('active');
-  const btn = buttons.find(b=>+b.dataset.pi===pi);
-  if(btn) btn.classList.add('active');
-  renderProject(pi);
+  if(state.view==='info'){
+    const btn = buttons.find(b=>b.dataset.info);
+    if(btn) btn.classList.add('active');
+    renderInfo();
+  } else if(state.view==='project'){
+    const btn = buttons.find(b=>!b.dataset.info && +b.dataset.pi===state.pi);
+    if(btn) btn.classList.add('active');
+    renderProject(state.pi);
+  } else {
+    brandEl.classList.add('active');
+    renderHome();
+  }
+}
+// push=true: 새 히스토리 항목 추가(뒤로가기로 돌아올 수 있게)
+function navTo(state, push){
+  applyState(state);
+  if(push !== false) history.pushState(state, '', hashFor(state));
+}
+// 브라우저/휴대폰 뒤로·앞으로 가기
+window.addEventListener('popstate', e=>{
+  applyState(e.state || {view:'home'});
+});
+
+// 홈 썸네일 클릭 → 해당 프로젝트 세부 페이지 열기
+homeEl.addEventListener('click', e=>{
+  const card = e.target.closest('.home-card'); if(!card) return;
+  navTo({view:'project', pi:+card.dataset.pi});
 });
 
 const igLabel = INFO.instagramLabel || INFO.instagram;
@@ -1208,23 +1264,26 @@ infoEl.innerHTML =
   infoBlocks.map(b=>`<div class="blk"><h2>${esc(b.h)}</h2>${b.body}</div>`).join('');
 
 buttons.forEach(b=>b.addEventListener('click',()=>{
-  buttons.forEach(x=>x.classList.remove('active'));
-  brandEl.classList.remove('active');
-  b.classList.add('active');
-  if(b.dataset.info) renderInfo();
-  else renderProject(+b.dataset.pi);
+  if(b.dataset.info) navTo({view:'info'});
+  else navTo({view:'project', pi:+b.dataset.pi});
 }));
 
 // 사이드바 'Heechan Lee' 클릭 → Home 갤러리로
-brandEl.addEventListener('click', ()=>{
-  buttons.forEach(x=>x.classList.remove('active'));
-  brandEl.classList.add('active');
-  renderHome();
-});
+brandEl.addEventListener('click', ()=> navTo({view:'home'}));
 
-// 기본 화면: Home 갤러리 ('Heechan Lee'를 누르면 언제든 다시 이동)
-brandEl.classList.add('active');
-renderHome();
+// 기본 화면: URL 해시(#about, #p3 등)에 맞춰 복원, 없으면 Home 갤러리
+function stateFromHash(){
+  const h = location.hash;
+  if(h === '#about') return {view:'info'};
+  const key = decodeURIComponent(h.replace(/^#/, ''));
+  if(slugToPi[key] !== undefined) return {view:'project', pi: slugToPi[key]};
+  const m = h.match(/^#p(\d+)$/);   // 옛 #p0 형식도 계속 지원
+  if(m){ const pi = +m[1]; if(flat[pi]) return {view:'project', pi}; }
+  return {view:'home'};
+}
+const __initState = stateFromHash();
+history.replaceState(__initState, '', hashFor(__initState));
+applyState(__initState);
 
 // 라이트박스 — 검정 배경, 양옆 화살표로 이전/다음
 const LIGHTBOX_CAPTION = false;   // 캡션 표시: 나중에 필요하면 true 로 바꾸세요
@@ -1265,9 +1324,17 @@ document.addEventListener('keydown', e=>{
 
 /* ───────── 히어로 인트로 동작 ───────── */
 (function(){
+  // 뒤로/앞으로 이동 시 브라우저가 멋대로 스크롤을 복원하지 않도록(우리가 직접 제어)
+  if('scrollRestoration' in history) history.scrollRestoration = 'manual';
   var hero=document.getElementById('hero');
   if(!hero) return;
-  function dismiss(){ window.__afterIntro=true; }
+  // 첫 스크롤 단계: 인트로를 지났다는 '표시'만 (히어로는 그대로 두고 부드럽게 덮이게)
+  function markAfterIntro(){ window.__afterIntro=true; }
+  // 실제로 히어로를 끄는 단계: 세부 페이지로 이동/복귀 시에만 (홈은 곧장 갤러리)
+  function dismiss(){
+    window.__afterIntro=true;
+    document.body.classList.add('intro-done');
+  }
   // 네비게이션/브랜드 클릭 시 인트로 종료(캡처 단계 → 렌더보다 먼저 실행)
   document.querySelectorAll('.index button, #brandHome').forEach(function(el){
     el.addEventListener('click', dismiss, true);
@@ -1276,14 +1343,14 @@ document.addEventListener('keydown', e=>{
     // 시트가 화면을 거의 다 덮었을 때만 내비게이션 표시
     if(window.scrollY < window.innerHeight*0.9){ document.body.classList.add('hero-on'); }
     else { document.body.classList.remove('hero-on'); }
-    if(window.scrollY >= window.innerHeight*0.5){ window.__afterIntro=true; }
+    if(window.scrollY >= window.innerHeight*0.5){ markAfterIntro(); }
   }
   window.addEventListener('scroll', upd, {passive:true});
   window.addEventListener('resize', upd);
   upd();
   var s=hero.querySelector('.hero-scroll');
   if(s) s.addEventListener('click', function(){
-    window.__afterIntro=true;
+    markAfterIntro();
     window.scrollTo({top:window.innerHeight, behavior:'smooth'});
   });
 })();
