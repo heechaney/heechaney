@@ -1440,7 +1440,7 @@ function applyHomeLayout(){
 
 // ───────── 화면 전환 + 브라우저 히스토리 ─────────
 function hashFor(state){
-  if(!state || state.view==='home') return '#';
+  if(!state || state.view==='home') return location.pathname + location.search;  // 홈: 해시 없는 깔끔한 주소
   if(state.view==='info') return '#about';
   return '#' + (slugOf[state.pi] || ('p'+state.pi));
 }
