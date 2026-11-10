@@ -139,7 +139,7 @@
 
   #view-work{ display:block; }
   /* 세부 페이지: 왼쪽 = 설명(고정/sticky), 오른쪽 = 스크롤되는 이미지 열 */
-  .proj-layout{ display:flex; align-items:flex-start; gap:40px; }
+  .proj-layout{ display:flex; align-items:flex-start; gap:40px; max-width:1580px; margin-inline:auto; }  /* 와이드 화면: 본문 최대폭 제한 + 가운데 정렬 */
   .proj-info{ position:sticky; top:30px; align-self:flex-start; flex:0 0 auto; width:44%; max-width:560px; display:flex; flex-direction:column; }
   .proj-images{ flex:1 1 0; min-width:0; }
   .work-grid{ display:flex; flex-direction:column; gap:12px; align-items:flex-start; }
